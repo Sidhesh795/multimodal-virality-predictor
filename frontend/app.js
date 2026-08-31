@@ -3,11 +3,27 @@ const GAUGE_RADIUS = 68;
 const GAUGE_CIRCUMFERENCE = 2 * Math.PI * GAUGE_RADIUS;
 const CATEGORIES = ["Low", "Medium", "High", "Viral"];
 const CATEGORY_COLORS = {
-  Low: "#94a3b8",
-  Medium: "#38bdf8",
+  Low: "#71717a",
+  Medium: "#a1a1aa",
   High: "#f59e0b",
   Viral: "#10b981",
 };
+
+// --- Theme Switcher ---
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("theme", theme);
+}
+
+(function initTheme() {
+  const saved = localStorage.getItem("theme");
+  applyTheme(saved === "light" ? "light" : "dark");
+})();
+
+document.getElementById("theme-toggle")?.addEventListener("click", () => {
+  const current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  applyTheme(current === "light" ? "dark" : "light");
+});
 
 const state = {
   videoFile: null,
