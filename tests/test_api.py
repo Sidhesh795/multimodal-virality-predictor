@@ -100,7 +100,7 @@ def test_predict_video_endpoint(client, dummy_video_file):
     # Verify temp upload directory cleanup
     temp_dir = DATA_RAW_DIR / "temp_uploads"
     if temp_dir.exists():
-        temp_files = list(temp_dir.glob("*"))
+        temp_files = [f for f in temp_dir.glob("*") if f.name != ".gitkeep"]
         assert len(temp_files) == 0, f"Temp upload files not cleaned up: {temp_files}"
 
 
