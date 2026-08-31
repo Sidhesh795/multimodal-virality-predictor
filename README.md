@@ -1,70 +1,472 @@
 # Multimodal Social Media Virality Prediction & Explainability Engine
 
-End-to-end system for predicting short-form social media virality from video, audio, caption, and posting metadata. The pipeline fuses multimodal features, scores content with XGBoost, explains each prediction with TreeSHAP, and returns prioritized creator recommendations through a FastAPI service and dark glassmorphism dashboard.
+An end-to-end **Machine Learning system for pre-publication social media video virality prediction**. The engine analyzes visual, acoustic, textual, and temporal characteristics of a video to estimate its expected performance tier before publication.
 
-## Key Features
+The system combines **XGBoost-based classification, multimodal feature engineering, TreeSHAP explainability, OpenCV, Librosa, Sentence-Transformers, FastAPI, and an interactive OLED-style dashboard** into a reproducible research and deployment pipeline.
 
-- **Multimodal feature fusion**
-  - OpenCV visual dynamics (scene cuts, brightness, motion, embeddings)
-  - Librosa acoustic tempo and spectral metrics
-  - NLP sentiment, hashtag/caption signals, and text embeddings
-  - Temporal metadata (duration, upload hour, weekend, category)
-- **+42.9% Macro F1 baseline uplift** from multimodal fusion versus a metadata-only baseline
-- **TreeSHAP game-theoretic explainability** isolating positive boosters and negative bottlenecks
-- **Actionable creator optimization recommendations** ranked HIGH / MEDIUM / LOW
+---
 
-## Tech Stack
+## Research Objective
 
-Python, FastAPI, XGBoost, SHAP, OpenCV, Librosa, Sentence-Transformers, Pytest, and a modern HTML5/CSS glassmorphism UI.
+The core research question is:
 
-## Project Layout
+> **Can multimodal pre-publication content characteristics predict social media video virality more effectively than individual modalities or scheduling metadata alone?**
 
+Unlike post-publication analytics systems, the predictive pipeline is restricted to information available **before a video is published**. This prevents downstream engagement signals from leaking into the prediction process.
+
+---
+
+# Research & Methodology
+
+## 1. Mathematically Defined Virality Target
+
+Raw view counts are strongly influenced by account size. To reduce this bias, virality is modeled relative to an account's follower base.
+
+Two formulations are evaluated:
+
+### Threshold-Floor Model
+
+\[
+V_1 =
+\frac{\text{Views}}
+{\max(\text{Followers},100)}
+\]
+
+The denominator floor prevents extremely small accounts from producing unstable ratios.
+
+### Additive-Smoothed Model
+
+\[
+V_2 =
+\frac{\text{Views}}
+{\text{Followers}+K}
+\]
+
+where:
+
+\[
+K = 1000
+\]
+
+Both formulations are evaluated empirically to determine whether the resulting virality classifications remain stable, particularly for low-follower accounts.
+
+### Virality Tiering
+
+The continuous virality ratio is converted into ordinal performance tiers using empirical percentile thresholds:
+
+| Percentile | Tier |
+|---|---|
+| < P50 | Low |
+| P50–P75 | Medium |
+| P75–P90 | High |
+| P90–P98 | Very High |
+| ≥ P98 | Viral |
+
+The percentile thresholds are calculated from the training data and then applied to held-out data to prevent target-distribution leakage.
+
+---
+
+## 2. Pre-Publication Feature Constraint
+
+The predictive feature vector is intentionally restricted to information available before publication:
+
+\[
+X =
+\{
+F_{\text{visual}},
+F_{\text{audio}},
+F_{\text{text}},
+F_{\text{temporal}}
+\}
+\]
+
+### Included
+
+- Visual motion and scene dynamics
+- Color and composition statistics
+- Scene-cut characteristics
+- Audio spectral characteristics
+- MFCC features
+- BPM and acoustic descriptors
+- Caption/text embeddings
+- Sentiment/polarity
+- Upload day and scheduled publication time
+
+### Explicitly Excluded
+
+The predictive pipeline does **not** use post-publication engagement signals such as:
+
+- Views
+- Likes
+- Shares
+- Comments
+- Watch-time
+- Audience retention
+- Post-publication engagement velocity
+
+This separation is a core requirement of the experimental design.
+
+---
+
+# 3. Leakage-Free Validation
+
+Random train/test splitting can produce overly optimistic results in social-media datasets because related content, trending audio, seasonal events, and recurring topics can appear in both partitions.
+
+Therefore, the project evaluates generalization using two complementary protocols.
+
+### Temporal Train/Test Split
+
+The dataset is ordered chronologically:
+
+- **First 80% → Training**
+- **Final 20% → Testing**
+
+The test set therefore represents a later period than the training data.
+
+This provides a more realistic approximation of deployment, where the model predicts future content using historical observations.
+
+### Leave-One-Category-Out (LOCO)
+
+Cross-category generalization is evaluated by withholding an entire content category during testing.
+
+Example:
+
+```text
+Training:
+Gaming
+Beauty
+Technology
+Fitness
+
+Testing:
+Dance
 ```
-backend/app/     FastAPI app, schemas, prediction routes
-src/              Data generation, feature extractors, training, SHAP, recommendations
-frontend/         Dashboard (index.html, style.css, app.js)
-tests/            Phase 1–6 unit and integration tests
-models/           Trained classifier, regressor, scaler, and evaluation report
-data/             Synthetic dataset and processed artifacts
-run_app.py        Local uvicorn launcher
+
+The model never sees samples from the held-out category during training.
+
+This evaluates whether learned multimodal patterns generalize beyond the domains represented in the training set.
+
+---
+
+# 4. Class-Imbalance Handling
+
+Virality distributions are inherently skewed, with extreme performance concentrated in a relatively small number of samples.
+
+Instead of applying SMOTE directly to the heterogeneous multimodal feature space, the training pipeline uses **class-aware sample weighting**.
+
+For sample \(i\):
+
+\[
+w_i =
+\frac{N}
+{C \times N_{c_i}}
+\]
+
+where:
+
+- \(N\) = total number of training samples
+- \(C\) = number of classes
+- \(N_{c_i}\) = number of samples belonging to sample \(i\)'s class
+
+This increases the contribution of underrepresented virality tiers during model optimization without generating synthetic multimodal feature vectors.
+
+---
+
+# 5. Multimodal Feature Engineering
+
+The system extracts complementary representations from four signal groups.
+
+### Text
+
+- Sentence-Transformer embeddings
+- Caption semantics
+- Sentiment/polarity features
+
+### Audio
+
+- MFCCs
+- Spectral centroid
+- Spectral characteristics
+- BPM
+- Other acoustic descriptors
+
+### Visual
+
+- Motion dynamics
+- Scene transitions
+- Frame-level statistics
+- Color/composition characteristics
+
+### Temporal Metadata
+
+- Upload day
+- Scheduled publication hour
+- Temporal publication features
+
+These representations are combined into a unified feature space for downstream classification.
+
+---
+
+# 6. Empirical Modality Ablation
+
+Ablation experiments measure how much predictive signal each modality contributes.
+
+| Model Variant | Feature Input | Macro F1 | Weighted F1 | Multi-Class ROC-AUC |
+|:---|:---|:---:|:---:|:---:|
+| **Baseline** | Temporal & Schedule Metadata | *Generated* | *Generated* | *Generated* |
+| **Ablation 1** | Text Only | *Generated* | *Generated* | *Generated* |
+| **Ablation 2** | Audio Only | *Generated* | *Generated* | *Generated* |
+| **Ablation 3** | Visual Only | *Generated* | *Generated* | *Generated* |
+| **Fusion Engine** | **Text + Audio + Visual + Temporal Metadata** | **Generated** | **Generated** | **Generated** |
+
+The results are generated reproducibly by:
+
+```text
+src/models/train_ablation.py
 ```
 
-## Getting Started
+and exported to:
 
-### 1. Setup
+```text
+reports/ablation_results.json
+```
+
+### Research Goal
+
+The ablation framework is designed to answer:
+
+1. How much predictive signal does each modality provide independently?
+2. Does multimodal fusion outperform individual modalities?
+3. Does adding temporal metadata improve the multimodal model?
+4. Which modalities contribute the most to generalization?
+
+No performance values are hard-coded into the README. All reported metrics originate from reproducible experiments.
+
+---
+
+# 7. Explainability
+
+Predictions are accompanied by model explanations using **TreeSHAP**.
+
+SHAP values identify which features contributed positively or negatively toward a prediction, allowing the system to move beyond:
+
+> "This video is predicted to go viral."
+
+toward:
+
+> "The prediction was primarily influenced by these visual, acoustic, textual, and temporal characteristics."
+
+This provides feature-level interpretability for both researchers and end users.
+
+---
+
+# System Architecture
+
+```text
+                Video + Caption + Schedule
+                         │
+          ┌──────────────┼──────────────┐
+          ▼              ▼              ▼
+       Visual          Audio           Text
+       OpenCV         Librosa      S-BERT/TextBlob
+          │              │              │
+          └──────────────┼──────────────┘
+                         ▼
+                 Feature Engineering
+                         │
+                         ▼
+                  Multimodal Fusion
+                         │
+                         ▼
+                     XGBoost
+                         │
+              ┌──────────┴──────────┐
+              ▼                     ▼
+       Virality Tier           TreeSHAP
+              │                     │
+              ▼                     ▼
+       Prediction API        Explanation Layer
+              │                     │
+              └──────────┬──────────┘
+                         ▼
+                  Interactive Dashboard
+```
+
+---
+
+# Technology Stack
+
+### Machine Learning
+
+- **XGBoost** — Multiclass classification
+- **Scikit-Learn** — preprocessing, evaluation, and experimentation
+- **TreeSHAP** — model explainability
+
+### Feature Extraction
+
+- **OpenCV** — visual and motion features
+- **Librosa** — acoustic and spectral features
+- **Sentence-Transformers** — semantic text embeddings
+- **TextBlob** — sentiment/polarity analysis
+
+### API & Serving
+
+- **FastAPI**
+- **Pydantic v2**
+- **Uvicorn**
+- **Joblib**
+
+### Frontend
+
+- HTML5
+- CSS
+- Vanilla JavaScript (ES6+)
+- OLED-inspired dark interface
+- Neutral light mode
+
+### Testing
+
+- **Pytest**
+- Unit tests
+- Integration tests
+
+---
+
+# Project Structure
+
+```text
+multimodal-virality-predictor/
+│
+├── src/
+│   ├── features/
+│   │   ├── visual/
+│   │   ├── audio/
+│   │   └── text/
+│   │
+│   ├── models/
+│   │   ├── train.py
+│   │   ├── train_ablation.py
+│   │   └── predict.py
+│   │
+│   └── api/
+│
+├── reports/
+│   └── ablation_results.json
+│
+├── tests/
+│
+├── frontend/
+│
+├── run_app.py
+├── requirements.txt
+└── README.md
+```
+
+*Directory structure may evolve as the research pipeline develops.*
+
+---
+
+# Quick Start
+
+### 1. Clone the repository
 
 ```bash
-python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# macOS / Linux
-source .venv/bin/activate
+git clone https://github.com/Sidhesh795/multimodal-virality-predictor.git
+cd multimodal-virality-predictor
+```
 
+### 2. Install dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
-If model artifacts are missing, train them once:
+### 3. Run the ablation experiments
 
 ```bash
-python -m src.models.train
+python src/models/train_ablation.py
 ```
 
-### 2. Run tests
+Results are written to:
+
+```text
+reports/ablation_results.json
+```
+
+### 4. Run the test suite
 
 ```bash
 python -m pytest -v
 ```
 
-### 3. Launch the app
+### 5. Launch the dashboard
 
 ```bash
 python run_app.py
 ```
 
-Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) for the dashboard.
+---
 
-- Health: `GET /api/v1/health`
-- JSON inference: `POST /api/v1/predict/json`
-- Video upload inference: `POST /api/v1/predict/video`
+# Reproducibility
 
-Interactive API docs are available at `/docs`.
+The project is designed around reproducible experimentation.
+
+Research results should be generated from the pipeline rather than manually entered into documentation.
+
+Key experimental artifacts include:
+
+- Dataset preprocessing configuration
+- Feature extraction configuration
+- Training configuration
+- Temporal train/test partitions
+- Virality threshold definitions
+- Ablation results
+- Evaluation metrics
+- Model artifacts
+- Explainability outputs
+
+---
+
+# Research Contributions
+
+This project focuses on five primary contributions:
+
+1. **Pre-publication virality prediction** using multimodal content characteristics.
+2. **Reach-normalized virality formulation** rather than raw view-count prediction.
+3. **Leakage-aware temporal evaluation** for realistic future-content prediction.
+4. **Modality ablation analysis** to quantify the contribution of individual signals.
+5. **Explainable predictions** using TreeSHAP rather than treating the model as a black box.
+
+---
+
+# Project Status
+
+| Component | Status |
+|---|---|
+| Multimodal feature extraction | In Development |
+| Virality target formulation | Implemented |
+| Leakage prevention | Implemented |
+| Temporal evaluation | Implemented / Under Validation |
+| LOCO evaluation | In Development |
+| Class-weighted training | Implemented |
+| Ablation framework | Implemented |
+| SHAP explainability | Implemented |
+| FastAPI serving | Implemented |
+| Interactive dashboard | Implemented |
+| Real-world dataset integration | In Progress |
+
+---
+
+# Research Disclaimer
+
+The system estimates **historical virality patterns from pre-publication characteristics**. It does not guarantee that a video will become viral.
+
+Virality is influenced by platform algorithms, audience behavior, timing, trends, distribution mechanisms, and other external factors that cannot be fully observed from the content itself.
+
+Therefore, model performance is evaluated empirically using held-out data rather than assumed from heuristic rules.
+
+---
+
+## Core Research Question
+
+> **Can multimodal pre-publication signals provide a reliable and explainable estimate of social media video virality across time and content categories?**
