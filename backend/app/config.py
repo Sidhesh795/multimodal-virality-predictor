@@ -17,6 +17,8 @@ MODELS_DIR = BASE_DIR / "models"
 DATA_RAW_DIR.mkdir(parents=True, exist_ok=True)
 DATA_PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
+REPORTS_DIR = BASE_DIR / "reports"
+REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Datasets
 SYNTHETIC_DATASET_PATH = DATA_RAW_DIR / "synthetic_virality_dataset.csv"

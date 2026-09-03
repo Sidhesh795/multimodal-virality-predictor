@@ -1,282 +1,344 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Multimodal Social Media Virality Predictor | AI Analytics Dashboard</title>
-  <meta name="description" content="AI-powered Multimodal Short-Form Video Virality Prediction, SHAP Explainability Decomposition, and Actionable Creator Recommendations.">
+  <meta name="theme-color" content="#060A14">
+  <title>ViralityAI — Multimodal Content Virality Prediction</title>
+  <meta name="description" content="Predict short-form video virality with XGBoost multimodal fusion, TreeSHAP explainability, and prescriptive creator optimization.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <!-- Background Glow Orbs -->
-  <div class="glow-orb orb-1"></div>
-  <div class="glow-orb orb-2"></div>
-  <div class="glow-orb orb-3"></div>
+  <!-- Ambient mesh background -->
+  <div class="page-mesh" aria-hidden="true"></div>
+  <canvas id="ambient-canvas" class="ambient-canvas" aria-hidden="true"></canvas>
 
-  <div class="app-container">
-    <!-- Header -->
-    <header class="navbar">
-      <div class="nav-brand">
-        <div class="brand-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-          </svg>
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- ===================== APP SHELL ===================== -->
+  <div class="app-shell">
+
+    <!-- ── SIDEBAR (History) ── -->
+    <aside class="sidebar" id="sidebar" aria-label="Analysis history">
+      <div class="sidebar-header">
+        <div class="brand-mark">
+          <span class="brand-bolt">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+          </span>
+          <span class="brand-wordmark">Virality<em>AI</em></span>
         </div>
-        <div>
-          <h1 class="brand-title">Virality<span>AI</span></h1>
-          <p class="brand-subtitle">Multimodal Social Media Virality Prediction & Explainability</p>
-        </div>
-      </div>
-      <div class="nav-badges">
-        <div class="benchmark-pill" title="Empirical Multimodal Fusion Gain over Baseline">
-          <span class="pill-dot"></span>
-          <span>Multimodal Fusion Uplift: <strong>+42.9% F1</strong></span>
-        </div>
-        <div id="api-status-badge" class="status-badge status-checking">
-          <span class="status-dot"></span>
-          <span id="api-status-text">Checking API...</span>
-        </div>
-        <button id="theme-toggle" class="theme-btn" aria-label="Toggle Theme">
-          <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="4"/>
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
-          </svg>
-          <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-          </svg>
+        <button class="sidebar-close-btn" id="sidebar-close-btn" aria-label="Close sidebar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
-    </header>
 
-    <!-- Main Dashboard Grid -->
-    <main class="dashboard-grid">
-      <!-- Left Column: Input Panel -->
-      <section class="panel input-panel">
-        <div class="panel-header">
-          <h2>Content Ingestion</h2>
-          <p>Upload video clip or configure multimodal metadata parameters.</p>
+      <button class="new-analysis-btn" id="new-analysis-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Analysis
+      </button>
+
+      <div class="sidebar-section-label">Recent Predictions</div>
+      <nav class="history-list" id="history-list" aria-label="Prediction history">
+        <div class="history-empty" id="history-empty">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          <span>No predictions yet</span>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-stat">
+          <span class="stat-dot"></span>
+          <span id="sidebar-model-status">Checking model...</span>
+        </div>
+        <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme" title="Switch light/dark">
+          <svg class="icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg class="icon-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <span class="theme-label">Theme</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ── MAIN CONTENT AREA ── -->
+    <div class="main-area">
+
+      <!-- Topbar (mobile + narrow) -->
+      <header class="topbar">
+        <button class="topbar-menu-btn" id="sidebar-open-btn" aria-label="Open history sidebar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="topbar-brand">
+          <span class="brand-bolt small">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </span>
+          <span class="brand-wordmark small">Virality<em>AI</em></span>
+        </div>
+        <div id="api-status-badge" class="status-badge status-checking" aria-live="polite">
+          <span class="status-dot"></span>
+          <span id="api-status-text">Checking…</span>
+        </div>
+      </header>
+
+      <!-- ── PAGE: INPUT (Chat-style prompt) ── -->
+      <div class="page" id="page-input">
+        <div class="input-page-center">
+          <!-- Hero headline -->
+          <div class="hero-block">
+            <div class="section-label">
+              <span class="pulse-dot" aria-hidden="true"></span>
+              MULTIMODAL · XGBOOST · TREESHAP · FASTAPI
+            </div>
+            <h1 class="hero-heading">Predict your content's<br><em class="grad-text">viral potential</em></h1>
+            <p class="hero-sub">Configure content signals below and get a full prediction with SHAP attribution and creator recommendations.</p>
+          </div>
+
+          <!-- Input Console Card -->
+          <div class="console-card">
+            <form id="virality-form" novalidate>
+
+              <!-- Video drop -->
+              <div class="form-group">
+                <label class="form-label" for="drop-zone">Video Clip <span class="form-label-note">(optional — enables visual & audio modalities)</span></label>
+                <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Upload video">
+                  <input type="file" id="video-file-input" accept="video/mp4,video/quicktime,video/x-msvideo,video/webm" class="file-input-hidden">
+                  <div class="dz-content" id="dz-idle">
+                    <div class="dz-icon">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    </div>
+                    <div>
+                      <span class="dz-prompt">Click to upload</span> or drag & drop
+                      <div class="dz-hint">MP4, MOV, WebM · 1 FPS · Librosa audio analysis</div>
+                    </div>
+                  </div>
+                  <div class="dz-content hidden" id="dz-file">
+                    <div class="dz-file-badge">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                      <span id="file-name"></span>
+                    </div>
+                    <button type="button" id="remove-file-btn" class="dz-remove" title="Remove">&times;</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Caption -->
+              <div class="form-group">
+                <div class="label-row">
+                  <label for="caption-input" class="form-label">Caption & Hashtags</label>
+                  <span id="caption-meta" class="meta-chip">0 chars · 0 #tags</span>
+                </div>
+                <textarea id="caption-input" rows="3" class="form-textarea" placeholder="e.g. Unbelievable trick shot! 🔥 #trending #fyp #viral"></textarea>
+              </div>
+
+              <!-- Duration + Hour row -->
+              <div class="form-row-3">
+                <div class="form-group">
+                  <div class="label-row">
+                    <label for="duration-slider" class="form-label">Duration</label>
+                    <span id="duration-display" class="meta-chip">18s</span>
+                  </div>
+                  <input type="range" id="duration-slider" min="5" max="60" value="18" class="form-slider">
+                </div>
+                <div class="form-group">
+                  <label for="upload-hour-select" class="form-label">Upload Slot</label>
+                  <select id="upload-hour-select" class="form-select">
+                    <option value="0">12 AM (Midnight)</option>
+                    <option value="3">3 AM (Graveyard)</option>
+                    <option value="6">6 AM (Early)</option>
+                    <option value="9">9 AM (Commute)</option>
+                    <option value="12">12 PM (Lunch)</option>
+                    <option value="15">3 PM (Afternoon)</option>
+                    <option value="18">6 PM (Evening)</option>
+                    <option value="19">7 PM (Prime)</option>
+                    <option value="20" selected>8 PM 🔥 (Peak)</option>
+                    <option value="21">9 PM (Late prime)</option>
+                    <option value="22">10 PM (Nightfall)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="category-select" class="form-label">Content Type</label>
+                  <select id="category-select" class="form-select">
+                    <option value="0">Entertainment & Comedy</option>
+                    <option value="1" selected>Dance, Music & Trends</option>
+                    <option value="2">Education & Tech</option>
+                    <option value="3">Lifestyle & Fitness</option>
+                    <option value="4">Gaming & Esports</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Weekend toggle -->
+              <div class="form-group">
+                <div class="toggle-row">
+                  <label class="form-label" for="is-weekend-toggle">Weekend Post</label>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="is-weekend-toggle" checked>
+                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                  </label>
+                  <span id="weekend-label" class="toggle-text">Saturday / Sunday</span>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="console-actions">
+                <button type="submit" id="analyze-btn" class="submit-btn">
+                  <span class="submit-btn-glow"></span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                  <span>Predict Virality</span>
+                </button>
+                <div class="sample-pills">
+                  <button type="button" id="sample-viral-btn" class="pill-btn">
+                    <span class="dot dot-green"></span> High Viral Demo
+                  </button>
+                  <button type="button" id="sample-low-btn" class="pill-btn">
+                    <span class="dot dot-red"></span> Low Traction Demo
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Footnote stats bar -->
+          <div class="footnote-bar">
+            <span><strong>+42.9%</strong> Macro F1 multimodal uplift over baseline</span>
+            <span class="divider-dot">·</span>
+            <span>XGBoost · TreeSHAP · OpenCV · Librosa · FastAPI</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PAGE: RESULTS ── -->
+      <div class="page hidden" id="page-results">
+
+        <!-- Loading overlay -->
+        <div id="loading-overlay" class="loading-full hidden">
+          <div class="loading-card">
+            <div class="tri-spinner">
+              <div class="tri-ring r1"></div>
+              <div class="tri-ring r2"></div>
+              <div class="tri-ring r3"></div>
+              <div class="tri-core">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              </div>
+            </div>
+            <p class="loading-title">Running Multimodal Inference</p>
+            <p id="loading-stage-text" class="loading-stage">Extracting multimodal representations…</p>
+            <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+          </div>
         </div>
 
-        <form id="virality-form" class="virality-form">
-          <!-- Video Dropzone -->
-          <div class="form-group">
-            <label class="form-label">Video Clip (MP4 / MOV / AVI)</label>
-            <div id="drop-zone" class="drop-zone">
-              <input type="file" id="video-file-input" accept="video/mp4,video/quicktime,video/x-msvideo,video/webm" class="file-input-hidden">
-              <div class="drop-zone-content">
-                <div class="upload-icon">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
-                  </svg>
-                </div>
-                <p class="drop-prompt"><strong>Click to upload</strong> or drag & drop video</p>
-                <p class="drop-hint">MP4, MOV up to 100MB (1 FPS downsampling)</p>
-                <div id="file-info" class="file-info hidden">
-                  <span id="file-name" class="file-name"></span>
-                  <button type="button" id="remove-file-btn" class="remove-file-btn" title="Remove file">&times;</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Caption Textarea -->
-          <div class="form-group">
-            <div class="label-with-count">
-              <label for="caption-input" class="form-label">Post Caption & Hashtags</label>
-              <span id="caption-meta" class="caption-meta">0 chars | 0 hashtags</span>
-            </div>
-            <textarea id="caption-input" rows="3" class="form-textarea" placeholder="Write caption with hashtags (e.g. Unbelievable trick shot! 🔥 #trending #fyp #viral)"></textarea>
-          </div>
-
-          <!-- Duration Slider -->
-          <div class="form-group">
-            <div class="label-with-count">
-              <label for="duration-slider" class="form-label">Duration (seconds)</label>
-              <span id="duration-display" class="slider-val">18s</span>
-            </div>
-            <input type="range" id="duration-slider" min="5" max="60" value="18" class="form-slider">
-          </div>
-
-          <!-- Two-column row: Upload Hour & Weekend -->
-          <div class="form-row">
-            <div class="form-group col-half">
-              <label for="upload-hour-select" class="form-label">Upload Hour (Local)</label>
-              <select id="upload-hour-select" class="form-select">
-                <option value="0">00:00 (12 AM)</option>
-                <option value="3">03:00 (3 AM)</option>
-                <option value="6">06:00 (6 AM)</option>
-                <option value="9">09:00 (9 AM - Morning)</option>
-                <option value="12">12:00 (12 PM - Lunch)</option>
-                <option value="15">15:00 (3 PM - Afternoon)</option>
-                <option value="18">18:00 (6 PM - Peak Prime)</option>
-                <option value="19">19:00 (7 PM - Peak Prime)</option>
-                <option value="20" selected>20:00 (8 PM - Peak Prime)</option>
-                <option value="21">21:00 (9 PM - Late Prime)</option>
-                <option value="22">22:00 (10 PM)</option>
-              </select>
-            </div>
-            <div class="form-group col-half">
-              <label class="form-label">Weekend Post?</label>
-              <div class="toggle-container">
-                <label class="switch">
-                  <input type="checkbox" id="is-weekend-toggle" checked>
-                  <span class="slider round"></span>
-                </label>
-                <span id="weekend-label" class="toggle-text">Yes (Saturday/Sunday)</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Category Select -->
-          <div class="form-group">
-            <label for="category-select" class="form-label">Content Category</label>
-            <select id="category-select" class="form-select">
-              <option value="0">Entertainment & Comedy</option>
-              <option value="1" selected>Dance, Music & Trends</option>
-              <option value="2">Education, Tech & Hacks</option>
-              <option value="3">Lifestyle, Vlogs & Fitness</option>
-              <option value="4">Gaming & Esports</option>
-            </select>
-          </div>
-
-          <!-- Action Buttons -->
-          <div class="form-actions">
-            <button type="submit" id="analyze-btn" class="btn btn-primary">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-              </svg>
-              <span>Analyze Virality</span>
+        <!-- Results content -->
+        <div id="results-content" class="results-layout">
+          <!-- Back to input -->
+          <div class="results-topbar">
+            <button class="back-btn" id="back-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              New prediction
             </button>
-            <div class="sample-btn-group">
-              <button type="button" id="sample-viral-btn" class="btn btn-secondary btn-sm" title="Load high viral demo data">
-                Sample: High Viral
-              </button>
-              <button type="button" id="sample-low-btn" class="btn btn-secondary btn-sm" title="Load low engagement demo data">
-                Sample: Low Engagement
-              </button>
+            <div class="results-meta" id="results-meta-bar">
+              <!-- caption snippet injected by JS -->
             </div>
           </div>
-        </form>
-      </section>
 
-      <!-- Right Column: Results & Analytics Dashboard -->
-      <section class="panel results-panel">
-        <!-- Loading State Overlay -->
-        <div id="loading-overlay" class="loading-overlay hidden">
-          <div class="spinner-container">
-            <div class="spinner"></div>
-            <p id="loading-stage-text" class="loading-text">Extracting multimodal features...</p>
-            <div class="loading-progress-bar">
-              <div id="loading-progress-fill" class="progress-fill"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Initial Placeholder State -->
-        <div id="empty-state" class="empty-state">
-          <div class="empty-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 6v6l4 2"/>
-            </svg>
-          </div>
-          <h3>Ready for Analysis</h3>
-          <p>Upload a video or enter caption details and click <strong>Analyze Virality</strong> to generate predictions, SHAP explainability breakdowns, and optimization recommendations.</p>
-        </div>
-
-        <!-- Results Display Container -->
-        <div id="results-container" class="results-container hidden">
-          <!-- Top Results Row: Radial Gauge & Category Probabilities -->
-          <div class="score-card-grid">
-            <!-- Radial Score Card -->
-            <div class="result-card score-card">
-              <h3 class="card-title">Virality Score</h3>
-              <div class="radial-gauge-wrapper">
-                <svg class="radial-gauge" viewBox="0 0 160 160">
-                  <circle class="gauge-bg" cx="80" cy="80" r="68"/>
-                  <circle id="gauge-fill" class="gauge-fill" cx="80" cy="80" r="68"/>
+          <!-- Score + Probability Row -->
+          <div class="results-grid-top">
+            <!-- Gauge card -->
+            <div class="r-card score-card">
+              <div class="r-card-eyebrow">Virality Index</div>
+              <div class="gauge-wrap">
+                <svg class="gauge-svg" viewBox="0 0 170 170">
+                  <defs>
+                    <linearGradient id="gFill" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#6B3BFA"/>
+                      <stop offset="100%" stop-color="#a78bfa"/>
+                    </linearGradient>
+                  </defs>
+                  <circle class="gauge-track" cx="85" cy="85" r="68"/>
+                  <circle id="gauge-fill" class="gauge-arc" cx="85" cy="85" r="68"/>
                 </svg>
-                <div class="gauge-content">
-                  <span id="score-number" class="score-number">0</span>
-                  <span class="score-max">/100</span>
+                <div class="gauge-inner">
+                  <span id="score-number" class="score-num">0.0</span>
+                  <span class="score-denom">/100</span>
                 </div>
               </div>
-              <div id="category-badge" class="category-badge category-viral">Viral</div>
+              <div id="category-badge" class="cat-badge cat-viral">Viral</div>
             </div>
 
-            <!-- Probability Distribution Card -->
-            <div class="result-card prob-card">
-              <h3 class="card-title">Class Probability Breakdown</h3>
-              <div id="prob-bars-container" class="prob-bars-container">
-                <!-- Dynamically generated probability bars -->
+            <!-- Class probabilities -->
+            <div class="r-card prob-card">
+              <div class="r-card-eyebrow">Class Probabilities</div>
+              <div class="chart-wrap" style="min-height:200px;">
+                <canvas id="prob-chart"></canvas>
               </div>
             </div>
           </div>
 
-          <!-- SHAP Feature Drivers Section -->
-          <div class="result-card drivers-card">
-            <div class="card-header-flex">
+          <!-- SHAP card -->
+          <div class="r-card">
+            <div class="r-card-header">
               <div>
-                <h3 class="card-title">SHAP Feature Attribution Breakdown</h3>
-                <p class="card-subtitle">Key positive and negative drivers contributing to predicted virality</p>
+                <div class="r-card-eyebrow">TreeSHAP Attribution</div>
+                <div class="r-card-title">Feature Impact Breakdown</div>
+                <div class="r-card-sub">Game-theoretic marginal contributions from each modality feature</div>
               </div>
             </div>
-            <div id="shap-waterfall" class="shap-waterfall" aria-label="SHAP feature driver waterfall chart">
-              <!-- Horizontal diverging bars populated by JS -->
+            <div class="chart-wrap shap-wrap">
+              <canvas id="shap-chart"></canvas>
             </div>
-            <div class="drivers-grid">
-              <!-- Positive Drivers (Green) -->
-              <div class="driver-column">
-                <div class="driver-column-header positive-header">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 15l-6-6-6 6"/>
-                  </svg>
-                  <span>Top Positive Boosters (⬆ Score)</span>
+            <div class="drivers-row">
+              <div class="driver-col">
+                <div class="driver-col-head positive-head">
+                  <span class="driver-icon pos-icon">↑</span> Positive Catalysts
                 </div>
-                <div id="positive-drivers-list" class="drivers-list">
-                  <!-- Populated by JS -->
-                </div>
+                <div id="positive-drivers-list" class="driver-items"></div>
               </div>
-
-              <!-- Negative Drivers (Red) -->
-              <div class="driver-column">
-                <div class="driver-column-header negative-header">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M6 9l6 6 6-6"/>
-                  </svg>
-                  <span>Top Bottlenecks (⬇ Score)</span>
+              <div class="driver-col">
+                <div class="driver-col-head negative-head">
+                  <span class="driver-icon neg-icon">↓</span> Bottlenecks
                 </div>
-                <div id="negative-drivers-list" class="drivers-list">
-                  <!-- Populated by JS -->
-                </div>
+                <div id="negative-drivers-list" class="driver-items"></div>
               </div>
             </div>
           </div>
 
-          <!-- Actionable Recommendations Section -->
-          <div class="result-card recommendations-card">
-            <div class="card-header-flex">
+          <!-- Recommendations card -->
+          <div class="r-card">
+            <div class="r-card-header">
               <div>
-                <h3 class="card-title">Actionable Creator Advice</h3>
-                <p class="card-subtitle">Domain-specific adjustments to optimize performance before posting</p>
+                <div class="r-card-eyebrow">Prescriptive Intelligence</div>
+                <div class="r-card-title">Creator Optimization Recommendations</div>
+                <div class="r-card-sub">Ranked, domain-specific adjustments to execute before publishing</div>
               </div>
             </div>
-            <div id="recommendations-list" class="recommendations-grid">
-              <!-- Populated by JS -->
-            </div>
+            <div id="recommendations-list" class="recs-grid"></div>
           </div>
+
+          <!-- Ablation Benchmarks -->
+          <details class="r-card ablation-details" id="benchmarks-details" open>
+            <summary class="ablation-summary">
+              <div class="ablation-left">
+                <span class="ablation-dot"></span>
+                Empirical Ablation Study — Modality Benchmarks
+              </div>
+              <span class="ablation-badge">Temporal Split · OVR AUC</span>
+            </summary>
+            <div class="ablation-body">
+              <p class="r-card-sub">Rigorous temporal validation benchmarking visual, acoustic, and NLP modality increments against metadata baseline.</p>
+              <div class="chart-wrap" style="min-height:280px;">
+                <canvas id="ablation-chart"></canvas>
+              </div>
+            </div>
+          </details>
         </div>
-      </section>
-    </main>
+      </div>
 
-    <!-- Footer -->
-    <footer class="app-footer">
-      <p>Multimodal Social Media Virality Prediction System &bull; Powered by XGBoost, SHAP, OpenCV, Librosa & FastAPI</p>
-    </footer>
-  </div>
+    </div><!-- /main-area -->
+  </div><!-- /app-shell -->
 
   <script src="app.js"></script>
 </body>

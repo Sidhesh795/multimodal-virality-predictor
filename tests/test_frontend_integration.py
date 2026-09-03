@@ -39,6 +39,10 @@ def test_root_serves_html(client):
     body = response.text.lower()
     assert "<html" in body
     assert "virality" in body
+    assert "cdn.jsdelivr.net/npm/chart.js" in body
+    assert 'id="ablation-chart"' in response.text
+    assert 'id="prob-chart"' in response.text
+    assert 'id="shap-chart"' in response.text
 
 
 def test_static_assets_served(client):

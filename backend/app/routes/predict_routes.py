@@ -4,12 +4,13 @@ Defines endpoints for JSON prediction, video file upload prediction, and health 
 """
 
 from pathlib import Path
+import json
 import tempfile
 import uuid
 from typing import Dict, Any, Optional
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException, Depends, status
 
-from backend.app.config import DATA_RAW_DIR
+from backend.app.config import BASE_DIR, DATA_RAW_DIR, REPORTS_DIR
 from backend.app.schemas import ContentInput, PredictionResult
 from src.features.pipeline import MultimodalFeaturePipeline
 from src.models.predict import ViralityPredictor
@@ -53,6 +54,25 @@ def health_check(predictor: ViralityPredictor = Depends(get_predictor)):
         "version": "1.0.0",
         "model_loaded": model_healthy,
     }
+
+
+@router.get(
+    "/metrics/ablation",
+    summary="Modality Ablation Benchmark Metrics",
+    response_model=Dict[str, Any],
+)
+def get_ablation_metrics():
+    """Returns saved ablation study metrics for dashboard charts."""
+    report_path = REPORTS_DIR / "ablation_results.json"
+    if not report_path.exists():
+        report_path = BASE_DIR / "reports" / "ablation_results.json"
+    if not report_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Ablation results not found. Run src.models.train_ablation first.",
+        )
+    with open(report_path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 @router.post(

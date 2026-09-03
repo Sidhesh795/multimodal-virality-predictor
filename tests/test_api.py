@@ -44,6 +44,19 @@ def test_health_endpoint(client):
     assert "version" in data
 
 
+def test_ablation_metrics_endpoint(client):
+    """Test GET /api/v1/metrics/ablation returns modality benchmark metrics."""
+    response = client.get("/api/v1/metrics/ablation")
+    assert response.status_code == 200
+    data = response.json()
+    assert "modalities" in data
+    modalities = data["modalities"]
+    for key in ("Metadata", "Text", "Audio", "Visual", "Multimodal Full Fusion"):
+        assert key in modalities
+        assert "f1_macro" in modalities[key]
+        assert "roc_auc_ovr_macro" in modalities[key]
+
+
 def test_predict_json_endpoint(client):
     """Test POST /api/v1/predict/json with valid ContentInput payload."""
     payload = {
