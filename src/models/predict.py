@@ -7,6 +7,7 @@ and prioritized optimization recommendations.
 
 from pathlib import Path
 from typing import Dict, Any, Optional
+import os
 import joblib
 import numpy as np
 import pandas as pd
@@ -31,6 +32,7 @@ class ViralityPredictor:
         self.label_encoder = None
         self.explainer = None
         self.recommendation_engine = None
+        self.enable_shap = os.getenv("VIRALITY_ENABLE_SHAP", "1") != "0"
         self._load_artifacts()
 
     def _load_artifacts(self):
@@ -56,8 +58,43 @@ class ViralityPredictor:
             self.label_encoder = LabelEncoder()
             self.label_encoder.fit(VIRALITY_CATEGORIES)
 
-        self.explainer = ViralityExplainer(models_dir=self.models_dir)
+        if self.enable_shap:
+            self.explainer = ViralityExplainer(models_dir=self.models_dir)
         self.recommendation_engine = RecommendationEngine()
+
+    def _fast_explanation(self, feature_df: pd.DataFrame, predicted_score: float) -> Dict[str, Any]:
+        """Return a low-resource, model-based attribution for hosted inference.
+
+        This fallback uses scaled feature values weighted by the XGBoost model's
+        feature importance. It is intentionally labelled as a fallback rather
+        than presented as a TreeSHAP explanation.
+        """
+        X = feature_df[FEATURE_COLUMNS].copy()
+        scaled = self.scaler.transform(X)[0]
+        importances = np.asarray(self.regressor.feature_importances_, dtype=float)
+        contributions = scaled * importances
+        items = []
+        for idx, name in enumerate(FEATURE_COLUMNS):
+            items.append({
+                "feature": name,
+                "shap_value": round(float(contributions[idx]), 4),
+                "raw_value": round(float(X.iloc[0][name]), 4),
+            })
+        ordered = sorted(items, key=lambda item: item["shap_value"], reverse=True)
+        negatives = [item for item in reversed(ordered) if item["shap_value"] < 0][:5]
+        positives = [item for item in ordered if item["shap_value"] > 0][:5]
+        impacts = sorted(items, key=lambda item: abs(item["shap_value"]), reverse=True)
+        return {
+            "explanation_method": "xgboost_feature_importance_fallback",
+            "base_value": 0.0,
+            "predicted_score": round(float(predicted_score), 2),
+            "top_positive_features": positives,
+            "top_negative_features": negatives,
+            "top_impacts": {item["feature"]: item["shap_value"] for item in impacts[:10]},
+            "feature_impacts": {item["feature"]: item["shap_value"] for item in items},
+            "modality_contributions": {},
+            "modality_strength": {},
+        }
 
     def predict(self, feature_df: pd.DataFrame) -> Dict[str, Any]:
         """
@@ -98,7 +135,10 @@ class ViralityPredictor:
         virality_score = float(np.clip(raw_scores[0], 0.0, 100.0))
 
         # 3. SHAP Explainability Decomposition
-        shap_analysis = self.explainer.explain_instance(feature_df)
+        if self.enable_shap:
+            shap_analysis = self.explainer.explain_instance(feature_df)
+        else:
+            shap_analysis = self._fast_explanation(feature_df, virality_score)
         explainability_breakdown = shap_analysis.get("top_impacts", {})
 
         # 4. Actionable Recommendation Generation

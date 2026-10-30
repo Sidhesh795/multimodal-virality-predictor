@@ -6,6 +6,7 @@ text embeddings via SentenceTransformers or deterministic projections.
 
 from typing import Dict, Any, List
 import hashlib
+import os
 import numpy as np
 
 
@@ -19,9 +20,14 @@ class TextFeatureExtractor:
     - text_embedding: 16-dimensional continuous semantic representation.
     """
 
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2", use_transformer: bool = True):
+    def __init__(self, model_name: str = "all-MiniLM-L6-v2", use_transformer: bool | None = None):
         self.model_name = model_name
-        self.use_transformer = use_transformer
+        # Hosted low-memory deployments can disable the transformer and use the
+        # deterministic 16-D fallback without changing the API contract.
+        if use_transformer is None:
+            self.use_transformer = os.getenv("VIRALITY_USE_TRANSFORMER", "1") != "0"
+        else:
+            self.use_transformer = use_transformer
         self._model = None
         self._model_failed = False
 

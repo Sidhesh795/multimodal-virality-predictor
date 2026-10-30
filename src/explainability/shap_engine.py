@@ -8,7 +8,6 @@ from typing import Dict, Any, List, Optional
 import joblib
 import numpy as np
 import pandas as pd
-import shap
 
 from backend.app.config import (
     MODELS_DIR,
@@ -38,6 +37,10 @@ class ViralityExplainer:
 
     def _load_explainer(self):
         """Loads serialized regressor and scaler and builds TreeExplainer."""
+        # Import SHAP only when full explainability is enabled. Hosted
+        # low-memory deployments use the predictor's lightweight fallback.
+        import shap
+
         reg_path = self.models_dir / "virality_regressor.joblib"
         scaler_path = self.models_dir / "scaler.joblib"
 

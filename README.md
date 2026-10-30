@@ -16,6 +16,63 @@ Unlike post-publication analytics systems, the predictive pipeline is restricted
 
 ---
 
+# Academic Evaluation Scope
+
+This project is structured as a final-year AIML engineering project for an Emerging Technologies evaluation. It combines research planning, system design, implementation, testing, and an industry-oriented prototype.
+
+## Problem Analysis and Research Planning
+
+The project addresses the difficulty of estimating short-form content performance before publication. Existing creator decisions often depend on raw historical views, scheduling intuition, or isolated content signals. These approaches do not adequately separate content characteristics from account size and platform effects.
+
+The project investigates the following research question:
+
+> Can multimodal pre-publication signals improve virality-tier prediction over scheduling and metadata features alone?
+
+The research plan includes:
+
+- A reach-normalized virality target.
+- Visual, acoustic, textual, and temporal feature extraction.
+- Leakage-aware temporal validation.
+- Modality ablation experiments.
+- Explainable predictions and creator-oriented recommendations.
+
+## System Design and Development
+
+The implementation is organized as a layered machine-learning system:
+
+1. Raw content and metadata ingestion.
+2. Visual, audio, text, and temporal feature extraction.
+3. Feature scaling and multimodal fusion.
+4. XGBoost classification and regression.
+5. TreeSHAP or low-resource feature attribution.
+6. FastAPI inference services.
+7. Interactive browser dashboard.
+
+The system is designed to demonstrate technical complexity beyond a single-model prediction script. It includes serialized model artifacts, API contracts, validation schemas, automated tests, ablation reporting, explainability, confidence estimation, and deployment configuration.
+
+## Testing, Research Outcome, and Project Management
+
+The project evaluates both predictive performance and system reliability. Evaluation artifacts include:
+
+- Macro-F1, weighted F1, precision, and recall.
+- Multi-class ROC-AUC where applicable.
+- Confusion matrices.
+- Regression MAE, RMSE, and R².
+- Metadata-versus-multimodal comparison.
+- Text, audio, and visual ablation results.
+- Temporal train/test validation.
+- API, data-pipeline, feature-extractor, and explainability tests.
+
+The repository also contains architecture documentation, reproducibility instructions, model artifacts, deployment configuration, and presentation planning material. Team contributions should be recorded separately in the final project documentation.
+
+## Research and Engineering Contribution
+
+The primary contribution is an integrated, leakage-aware, explainable multimodal framework for estimating pre-publication social-media content potential. The work combines established machine-learning methods into a reproducible engineering system and evaluates the value of each modality through controlled ablation experiments.
+
+The current benchmark uses the dataset available in this repository. Results should therefore be interpreted within that dataset scope. The model estimates historical patterns and does not guarantee future platform performance. Real-world deployment would require a larger, ethically collected longitudinal dataset and creator-disjoint evaluation.
+
+---
+
 # Research & Methodology
 
 ## 1. Mathematically Defined Virality Target

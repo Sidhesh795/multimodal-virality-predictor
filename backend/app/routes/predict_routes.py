@@ -5,6 +5,7 @@ Defines endpoints for JSON prediction, video file upload prediction, and health 
 
 from pathlib import Path
 import json
+import os
 import tempfile
 import uuid
 from typing import Dict, Any, Optional
@@ -60,7 +61,9 @@ def health_check(predictor: ViralityPredictor = Depends(get_predictor)):
             "multimodal_feature_extraction",
             "virality_tier_classification",
             "continuous_score_regression",
-            "tree_shap_explainability",
+            "tree_shap_explainability"
+            if os.getenv("VIRALITY_ENABLE_SHAP", "1") != "0"
+            else "low_resource_feature_attribution",
             "confidence_estimation",
         ],
     }

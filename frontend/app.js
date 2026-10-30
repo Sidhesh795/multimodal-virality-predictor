@@ -740,18 +740,22 @@ async function submitAnalysis(e) {
 
   try {
     let res;
+    const controller = new AbortController();
+    const requestTimeout = setTimeout(() => controller.abort(), 120000);
     if (state.videoFile) {
       const fd = new FormData();
       Object.entries(payload).forEach(([k, v]) => fd.append(k, String(v)));
       fd.append("file", state.videoFile);
-      res = await fetch(`${API_BASE}/predict/video`, { method: "POST", body: fd });
+      res = await fetch(`${API_BASE}/predict/video`, { method: "POST", body: fd, signal: controller.signal });
     } else {
       res = await fetch(`${API_BASE}/predict/json`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
     }
+    clearTimeout(requestTimeout);
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: "Prediction pipeline failed." }));
@@ -779,7 +783,10 @@ async function submitAnalysis(e) {
 
   } catch (err) {
     showPage("input");
-    showToast("Inference failed", String(err.message || err), "error");
+    const message = err.name === "AbortError"
+      ? "The hosted model took longer than 120 seconds. Try a shorter video or enable low-resource mode on Render."
+      : String(err.message || err);
+    showToast("Inference failed", message, "error");
   } finally {
     clearInterval(stageTimer);
     hideLoading();
