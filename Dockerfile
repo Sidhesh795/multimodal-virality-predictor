@@ -3,7 +3,8 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    VIRALITY_USE_TRANSFORMER=0
+    VIRALITY_USE_TRANSFORMER=0 \
+    VIRALITY_ENABLE_SHAP=0
 
 WORKDIR /app
 
@@ -18,6 +19,7 @@ COPY backend ./backend
 COPY src ./src
 COPY models ./models
 COPY data ./data
+COPY reports ./reports
 COPY frontend ./frontend
 COPY run_app.py .
 
