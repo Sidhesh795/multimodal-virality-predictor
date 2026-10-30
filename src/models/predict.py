@@ -85,6 +85,13 @@ class ViralityPredictor:
             cls_name: round(float(prob), 4)
             for cls_name, prob in zip(classes, cat_probs[0])
         }
+        confidence = float(np.max(cat_probs[0]))
+        if confidence >= 0.75:
+            uncertainty_band = "high"
+        elif confidence >= 0.50:
+            uncertainty_band = "medium"
+        else:
+            uncertainty_band = "low"
 
         # 2. Continuous Score Regression
         raw_scores = self.regressor.predict(X_scaled)
@@ -103,6 +110,8 @@ class ViralityPredictor:
             "virality_score": round(virality_score, 2),
             "predicted_category": predicted_category,
             "probabilities": probabilities,
+            "confidence": round(confidence, 4),
+            "uncertainty_band": uncertainty_band,
             "explainability_breakdown": explainability_breakdown,
             "shap_explanation": shap_analysis,
             "recommendations": recommendations,

@@ -1,34 +1,34 @@
 {
   "multimodal_classification": {
-    "accuracy": 0.4,
-    "f1_macro": 0.3884,
-    "f1_weighted": 0.3884,
-    "precision_macro": 0.3823,
-    "recall_macro": 0.4,
+    "accuracy": 0.51,
+    "f1_macro": 0.5024,
+    "f1_weighted": 0.5061,
+    "precision_macro": 0.5081,
+    "recall_macro": 0.5137,
     "confusion_matrix": [
       [
-        14,
-        10,
+        18,
+        7,
         9,
-        17
+        10
       ],
       [
-        12,
-        26,
-        12,
+        8,
+        28,
+        7,
         0
       ],
       [
+        15,
         19,
-        20,
-        7,
-        4
+        18,
+        5
       ],
       [
         11,
-        1,
-        5,
-        33
+        4,
+        3,
+        38
       ]
     ],
     "class_names": [
@@ -39,35 +39,35 @@
     ]
   },
   "baseline_classification": {
-    "accuracy": 0.285,
-    "f1_macro": 0.2718,
-    "f1_weighted": 0.2718,
-    "precision_macro": 0.2706,
-    "recall_macro": 0.285,
+    "accuracy": 0.29,
+    "f1_macro": 0.2723,
+    "f1_weighted": 0.2774,
+    "precision_macro": 0.2655,
+    "recall_macro": 0.2846,
     "confusion_matrix": [
       [
-        9,
-        12,
-        7,
+        4,
+        4,
+        14,
         22
       ],
       [
-        9,
-        23,
         11,
-        7
+        16,
+        11,
+        5
       ],
       [
-        7,
-        23,
-        7,
-        13
+        11,
+        21,
+        10,
+        15
       ],
       [
-        13,
         11,
         8,
-        18
+        9,
+        28
       ]
     ],
     "class_names": [
@@ -78,15 +78,23 @@
     ]
   },
   "virality_regression": {
-    "mae": 8.8818,
-    "rmse": 11.1044,
-    "r2_score": 0.5645
+    "mae": 8.2259,
+    "rmse": 10.4326,
+    "r2_score": 0.6085
   },
   "fusion_uplift": {
-    "f1_macro_multimodal": 0.3884,
-    "f1_macro_baseline": 0.2718,
-    "f1_macro_uplift_absolute": 0.1166,
-    "f1_macro_uplift_percent": 42.9,
+    "f1_macro_multimodal": 0.5024,
+    "f1_macro_baseline": 0.2723,
+    "f1_macro_uplift_absolute": 0.2301,
+    "f1_macro_uplift_percent": 84.5,
     "multimodal_outperforms_baseline": true
+  },
+  "evaluation_protocol": {
+    "split_strategy": "temporal",
+    "train_ratio": 0.8,
+    "n_train": 800,
+    "n_test": 200,
+    "class_weighting": "balanced_sample_weight",
+    "random_seed": 42
   }
 }

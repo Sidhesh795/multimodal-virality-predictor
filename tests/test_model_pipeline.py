@@ -92,6 +92,8 @@ def test_virality_predictor_inference():
     assert "virality_score" in pred_dict
     assert "predicted_category" in pred_dict
     assert "probabilities" in pred_dict
+    assert 0.0 <= pred_dict["confidence"] <= 1.0
+    assert pred_dict["uncertainty_band"] in {"low", "medium", "high"}
 
     # Check bounds and types
     assert 0.0 <= pred_dict["virality_score"] <= 100.0

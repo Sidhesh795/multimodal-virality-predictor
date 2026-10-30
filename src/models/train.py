@@ -7,8 +7,8 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.utils.class_weight import compute_sample_weight
 from xgboost import XGBClassifier, XGBRegressor
 
 from backend.app.config import (
@@ -26,13 +26,14 @@ from src.models.evaluate import (
     evaluate_regression,
     save_evaluation_report,
 )
+from src.data.splitters import TemporalSplitter
 
 
 def train_models():
     """
     Executes full training pipeline:
     1. Loads synthetic dataset.
-    2. Performs stratified 80/20 train/test split.
+    2. Performs a chronological 80/20 train/test split.
     3. Fits StandardScaler on feature columns.
     4. Trains Multimodal XGBClassifier and XGBRegressor.
     5. Trains Metadata Baseline XGBClassifier.
@@ -56,22 +57,23 @@ def train_models():
     label_encoder.fit(VIRALITY_CATEGORIES)
     y_category_encoded = label_encoder.transform(y_category)
 
-    # 2. Stratified 80/20 Train/Test Split
-    (
-        X_train,
-        X_test,
-        y_cat_train,
-        y_cat_test,
-        y_score_train,
-        y_score_test,
-    ) = train_test_split(
-        X,
-        y_category_encoded,
-        y_score,
-        test_size=0.20,
-        random_state=RANDOM_SEED,
-        stratify=y_category_encoded,
-    )
+    # 2. Chronological 80/20 split. The generated dataset does not carry
+    # platform timestamps, so row order is treated as the deterministic
+    # collection order for this offline benchmark.
+    if "created_at" not in df.columns:
+        df = df.copy()
+        df["created_at"] = pd.date_range(
+            start="2024-01-01", periods=len(df), freq="h", tz="UTC"
+        )
+    splitter = TemporalSplitter(df, timestamp_col="created_at", train_ratio=0.8)
+    train_idx, test_idx = splitter.split()
+    X_train = X.iloc[train_idx]
+    X_test = X.iloc[test_idx]
+    y_cat_train = y_category_encoded[train_idx]
+    y_cat_test = y_category_encoded[test_idx]
+    y_score_train = y_score[train_idx]
+    y_score_test = y_score[test_idx]
+    sample_weight = compute_sample_weight("balanced", y_cat_train)
 
     print(f"Training set: {X_train.shape[0]} rows, Test set: {X_test.shape[0]} rows")
 
@@ -91,7 +93,7 @@ def train_models():
         eval_metric="mlogloss",
         random_state=RANDOM_SEED,
     )
-    clf.fit(X_train_scaled, y_cat_train)
+    clf.fit(X_train_scaled, y_cat_train, sample_weight=sample_weight)
     y_cat_pred = clf.predict(X_test_scaled)
     multimodal_cls_metrics = evaluate_classification(
         y_cat_test, y_cat_pred, class_names=list(label_encoder.classes_)
@@ -131,7 +133,7 @@ def train_models():
         eval_metric="mlogloss",
         random_state=RANDOM_SEED,
     )
-    baseline_clf.fit(X_train_base, y_cat_train)
+    baseline_clf.fit(X_train_base, y_cat_train, sample_weight=sample_weight)
     y_base_pred = baseline_clf.predict(X_test_base)
     baseline_cls_metrics = evaluate_classification(
         y_cat_test, y_base_pred, class_names=list(label_encoder.classes_)
@@ -146,6 +148,17 @@ def train_models():
         virality_reg_metrics,
         report_path,
     )
+    report["evaluation_protocol"] = {
+        "split_strategy": "temporal",
+        "train_ratio": 0.8,
+        "n_train": int(len(train_idx)),
+        "n_test": int(len(test_idx)),
+        "class_weighting": "balanced_sample_weight",
+        "random_seed": RANDOM_SEED,
+    }
+    with open(report_path, "w", encoding="utf-8") as f:
+        import json
+        json.dump(report, f, indent=2)
     print(f"Evaluation report saved to {report_path}")
     print(f"Multimodal F1 Uplift: +{report['fusion_uplift']['f1_macro_uplift_percent']}% over Baseline")
 

@@ -50,6 +50,8 @@ def test_virality_explainer(sample_feature_df):
     assert "top_positive_features" in shap_res
     assert "top_negative_features" in shap_res
     assert "feature_impacts" in shap_res
+    assert "modality_contributions" in shap_res
+    assert "modality_strength" in shap_res
 
     assert isinstance(shap_res["base_value"], float)
     assert isinstance(shap_res["predicted_score"], float)

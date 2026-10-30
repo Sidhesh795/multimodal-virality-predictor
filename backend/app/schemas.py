@@ -133,6 +133,12 @@ class PredictionResult(BaseModel):
     probabilities: Dict[str, float] = Field(
         ..., description="Probability distribution across virality categories"
     )
+    confidence: float = Field(
+        0.0, ge=0.0, le=1.0, description="Confidence proxy from maximum predicted class probability"
+    )
+    uncertainty_band: str = Field(
+        "unknown", description="Predictive confidence band: low, medium, or high"
+    )
     explainability_breakdown: Dict[str, float] = Field(
         default_factory=dict, description="Feature importance/SHAP impact breakdown"
     )

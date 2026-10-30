@@ -53,6 +53,16 @@ def health_check(predictor: ViralityPredictor = Depends(get_predictor)):
         "service": "Multimodal Social Media Virality Prediction API",
         "version": "1.0.0",
         "model_loaded": model_healthy,
+        "feature_count": len(predictor.classifier.feature_importances_)
+        if model_healthy
+        else 0,
+        "capabilities": [
+            "multimodal_feature_extraction",
+            "virality_tier_classification",
+            "continuous_score_regression",
+            "tree_shap_explainability",
+            "confidence_estimation",
+        ],
     }
 
 

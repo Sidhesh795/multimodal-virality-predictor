@@ -4,7 +4,8 @@
    localStorage history persistence
    ───────────────────────────────────────────── */
 
-const API_BASE = "/api/v1";
+const API_ORIGIN = (window.VIRALITY_API_URL || window.location.origin).replace(/\/$/, "");
+const API_BASE = `${API_ORIGIN}/api/v1`;
 const GAUGE_RADIUS = 68;
 const GAUGE_CIRCUMFERENCE = 2 * Math.PI * GAUGE_RADIUS;
 const HISTORY_KEY = "virality-history";
@@ -683,6 +684,13 @@ function renderRecommendations(recs) {
 function renderResults(result, animate = true) {
   setGauge(result.virality_score, animate);
   setCategoryBadge(result.predicted_category);
+
+  const confidenceEl = $("confidence-badge");
+  if (confidenceEl) {
+    const confidence = Math.round(Number(result.confidence || 0) * 100);
+    const band = String(result.uncertainty_band || "unknown");
+    confidenceEl.textContent = `Confidence proxy: ${confidence}% · ${band} uncertainty`;
+  }
 
   renderProbChart(result.probabilities || {});
 

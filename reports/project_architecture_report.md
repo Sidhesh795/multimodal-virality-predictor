@@ -7,7 +7,7 @@
 
 In short-form social video platforms (TikTok, Instagram Reels, YouTube Shorts), organic reach is governed by recommendation algorithms that evaluate content engagement signals within milliseconds of release. Traditional virality models rely exclusively on posting metadata (such as follower counts or upload hours) or unimodal NLP text features. 
 
-This project implements an end-to-end, industrial-grade **Multimodal Machine Learning and Explainability Engine** that predicts the viral potential of short-form videos prior to publication. By fusing **computer vision (OpenCV)**, **audio digital signal processing (Librosa)**, **deep contextual NLP (Sentence-BERT & TextBlob)**, and **cyclical temporal metadata**, the system achieves a **+42.9% Macro F1 baseline uplift** over metadata-only approaches. 
+This project implements an end-to-end, industrial-grade **Multimodal Machine Learning and Explainability Engine** that predicts the viral potential of short-form videos prior to publication. By fusing **computer vision (OpenCV)**, **audio digital signal processing (Librosa)**, **deep contextual NLP (Sentence-BERT & TextBlob)**, and **cyclical temporal metadata**, the temporal ablation benchmark records a **+54.6% Macro F1 uplift** over metadata-only features. 
 
 Beyond point-estimate predictions, the platform applies **TreeSHAP (game-theoretic cooperative feature attribution)** to decompose the prediction into positive catalysts and negative bottlenecks, paired with a **Prescriptive Optimization Engine** that delivers targeted recommendations to creators.
 
@@ -196,13 +196,13 @@ To validate that multimodal fusion genuinely improves predictive power over isol
 
 | Modality Set | Features Used | Macro F1 Score | Multi-Class ROC-AUC (OVR) | Relative Gain over Baseline |
 |---|---|---|---|---|
-| **Metadata Baseline** | Duration, Upload Hour, Weekend, Category | $0.3061$ | $0.5539$ | Baseline |
+| **Metadata Baseline** | Duration, Upload Hour, Weekend, Category | $0.3073$ | $0.5575$ | Baseline |
 | **Text Modality Only** | Metadata + SBERT + Sentiment + Hashtags | $0.3472$ | $0.6051$ | $+13.4\%$ |
 | **Audio Modality Only** | Metadata + RMS + Tempo + Spectral Feats | $0.2917$ | $0.5647$ | $-4.7\%$ (Acoustic alone is noisy) |
 | **Visual Modality Only** | Metadata + OpenCV Flow + Cuts + Brightness | $0.3478$ | $0.6275$ | $+13.6\%$ |
-| **Multimodal Full Fusion** | **All 57 Combined Features** | $\mathbf{0.4722}$ | $\mathbf{0.7483}$ | **$\mathbf{+42.9\%}$ F1 Uplift** |
+| **Multimodal Full Fusion** | **All 57 Combined Features** | $\mathbf{0.4750}$ | $\mathbf{0.7513}$ | **$\mathbf{+54.6\%}$ F1 Uplift** |
 
-**Key Academic Takeaway:** Audio features alone underperform metadata; however, when fused with visual cuts and text semantics, audio acts as an interaction booster, pushing the full model's ROC-AUC to $0.7483$.
+**Key Academic Takeaway:** Audio features alone underperform metadata; however, when fused with visual cuts and text semantics, audio contributes to the multimodal interaction, pushing the full model's ROC-AUC to $0.7513$.
 
 ---
 

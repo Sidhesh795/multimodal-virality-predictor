@@ -10,4 +10,5 @@ textblob
 fastapi
 uvicorn
 pydantic
+python-multipart
 pytest

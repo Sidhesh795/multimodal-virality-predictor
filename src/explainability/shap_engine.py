@@ -10,7 +10,17 @@ import numpy as np
 import pandas as pd
 import shap
 
-from backend.app.config import MODELS_DIR, FEATURE_COLUMNS
+from backend.app.config import (
+    MODELS_DIR,
+    FEATURE_COLUMNS,
+    METADATA_FEATURES,
+    VISUAL_SCALAR_FEATURES,
+    VISUAL_EMBEDDING_FEATURES,
+    AUDIO_SCALAR_FEATURES,
+    AUDIO_EMBEDDING_FEATURES,
+    TEXT_SCALAR_FEATURES,
+    TEXT_EMBEDDING_FEATURES,
+)
 
 
 class ViralityExplainer:
@@ -95,6 +105,24 @@ class ViralityExplainer:
         sorted_by_abs = sorted(features_list, key=lambda x: abs(x["shap_value"]), reverse=True)
         top_impacts = {f["feature"]: f["shap_value"] for f in sorted_by_abs[:10]}
 
+        modality_groups = {
+            "metadata": METADATA_FEATURES,
+            "visual": VISUAL_SCALAR_FEATURES + VISUAL_EMBEDDING_FEATURES,
+            "audio": AUDIO_SCALAR_FEATURES + AUDIO_EMBEDDING_FEATURES,
+            "text": TEXT_SCALAR_FEATURES + TEXT_EMBEDDING_FEATURES,
+        }
+        modality_contributions = {
+            modality: round(
+                float(sum(feature_impacts_dict.get(name, 0.0) for name in names)),
+                4,
+            )
+            for modality, names in modality_groups.items()
+        }
+        modality_strength = {
+            modality: round(abs(value), 4)
+            for modality, value in modality_contributions.items()
+        }
+
         return {
             "base_value": round(base_value, 2),
             "predicted_score": round(predicted_score, 2),
@@ -102,4 +130,6 @@ class ViralityExplainer:
             "top_negative_features": top_negative,
             "top_impacts": top_impacts,
             "feature_impacts": feature_impacts_dict,
+            "modality_contributions": modality_contributions,
+            "modality_strength": modality_strength,
         }

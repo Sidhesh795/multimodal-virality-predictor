@@ -17,10 +17,12 @@ async def lifespan(app: FastAPI):
     """
     Lifespan context manager to pre-warm models and extractors on application cold start.
     """
-    print("Prewarming Virality Predictor and Multimodal Feature Pipeline...")
+    print("Prewarming Virality Predictor...")
     get_predictor()
-    get_pipeline()
-    print("Application prewarming complete. API ready to receive requests.")
+    # The feature pipeline includes Sentence-Transformer initialization, which
+    # is intentionally lazy-loaded on the first prediction request. This keeps
+    # health checks, deployment probes, and API startup responsive.
+    print("Application prewarming complete. Feature pipeline will load on demand.")
     yield
     print("Shutting down API service.")
 
