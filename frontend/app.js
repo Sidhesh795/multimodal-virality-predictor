@@ -687,9 +687,28 @@ function renderResults(result, animate = true) {
 
   const confidenceEl = $("confidence-badge");
   if (confidenceEl) {
-    const confidence = Math.round(Number(result.confidence || 0) * 100);
-    const band = String(result.uncertainty_band || "unknown");
-    confidenceEl.textContent = `Confidence proxy: ${confidence}% · ${band} uncertainty`;
+    // Older history entries or an out-of-sync API may omit the confidence
+    // fields. Derive the proxy from the class probabilities when possible;
+    // otherwise show that the value is unavailable instead of displaying a
+    // misleading 0% confidence.
+    let confidence = Number(result.confidence);
+    if (!Number.isFinite(confidence) || confidence <= 0) {
+      const probabilities = Object.values(result.probabilities || {})
+        .map(Number)
+        .filter(Number.isFinite);
+      confidence = probabilities.length ? Math.max(...probabilities) : NaN;
+    }
+
+    let band = String(result.uncertainty_band || "").toLowerCase();
+    if (!["low", "medium", "high"].includes(band) && Number.isFinite(confidence)) {
+      band = confidence >= 0.75 ? "high" : confidence >= 0.50 ? "medium" : "low";
+    }
+
+    if (Number.isFinite(confidence) && ["low", "medium", "high"].includes(band)) {
+      confidenceEl.textContent = `Confidence proxy: ${Math.round(confidence * 100)}% · ${band} uncertainty`;
+    } else {
+      confidenceEl.textContent = "Confidence unavailable · not returned by the model";
+    }
   }
 
   renderProbChart(result.probabilities || {});
